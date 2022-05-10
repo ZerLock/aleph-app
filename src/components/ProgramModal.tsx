@@ -14,7 +14,7 @@ import {
 } from '@chakra-ui/react';
 
 import { DEFAULT_API_V2 } from "aleph-sdk-ts/global"
-import {post, program, store} from "aleph-sdk-ts";
+import { program } from "aleph-sdk-ts";
 import { ethereum } from "aleph-sdk-ts/accounts";
 import { ItemType } from "aleph-sdk-ts/messages/message";
 
@@ -24,53 +24,41 @@ type UploadModalType = {
     account: ethereum.ETHAccount;
 };
 
-const UploadModal = ({ isOpen, onClose, account }: UploadModalType): JSX.Element => {
+const ProgramModal = ({ isOpen, onClose, account }: UploadModalType): JSX.Element => {
     const [selectedFile, setSelectedFile] = useState<File>(new File([], ""));
     const toast = useToast();
 
     const handleSubmit = async () => {
-        const confirmation = await store.Publish({
-            channel: "TEST",
+        const confirmation = await program.publish({
             account: account,
-            fileObject: selectedFile,
+            channel: "TEST",
             storageEngine: ItemType.storage,
+            inlineRequested: true,
             APIServer: DEFAULT_API_V2,
+            file: selectedFile,
+            entrypoint: "main:app",
         });
+        console.log("confirmation: https://aleph.sh/vm/" + confirmation.item_hash);
         if (confirmation) {
-            const conf = await post.Publish({
-                APIServer: DEFAULT_API_V2,
-                channel: "TEST",
-                inlineRequested: true,
-                storageEngine: ItemType.ipfs,
-                account: account,
-                postType: "",
-                content: {
-                    headers: "Hashes My App",
-                    hashes: confirmation.content.item_hash,
-                    name: selectedFile.name,
-                }
+            toast({
+                title: "Program uploaded",
+                description: "Program uploaded to Aleph",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
             });
-            if (conf) {
-                toast({
-                    title: "Upload successful",
-                    description: "Your file has been uploaded successfully",
-                    status: "success",
-                    duration: 3000,
-                    isClosable: true,
-                });
-            } else {
-                toast({
-                    title: "Upload failed",
-                    description: "Your file has not been uploaded",
-                    status: "error",
-                    duration: 3000,
-                    isClosable: true,
-                });
-            }
+            toast({
+                title: "Visit your program",
+                description: "https://aleph.sh/vm/" + confirmation.item_hash,
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            });
+            console.log("Program uploaded!\nVisit https://aleph.sh/vm/" + confirmation.item_hash, "to see it in the VM");
         } else {
             toast({
                 title: "Upload failed",
-                description: "Your file has not been uploaded",
+                description: "Something went wrong",
                 status: "error",
                 duration: 3000,
                 isClosable: true,
@@ -85,12 +73,16 @@ const UploadModal = ({ isOpen, onClose, account }: UploadModalType): JSX.Element
                 <ModalOverlay />
                 <ModalContent>
                     <ModalHeader>
-                        <Text fontSize="2xl">Upload file on Aleph nodes</Text>
+                        <Text fontSize="2xl">Upload program on Aleph nodes</Text>
                     </ModalHeader>
 
+                    <ModalBody marginTop={"-20px"}>
+                        <Text fontSize="lg">⚠️ Only .zip files and python servers</Text>
+                    </ModalBody>
                     <ModalBody>
                         <Input
                             type="file"
+                            accept=".zip"
                             border="0px"
                             _focus={{ outline: 'none' }}
                             onChange={(e) => {
@@ -125,4 +117,4 @@ const UploadModal = ({ isOpen, onClose, account }: UploadModalType): JSX.Element
     );
 }
 
-export default UploadModal;
+export default ProgramModal;

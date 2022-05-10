@@ -1,32 +1,31 @@
+import {useEffect, useState} from 'react';
 import {
-    useEffect,
-    useState
-} from 'react';
-import {
-    Center,
     Box,
-    Textarea,
-    Text,
     Button,
+    Center,
     Grid,
     GridItem,
-    Stack,
     Link,
     Modal,
-    ModalOverlay,
+    ModalBody,
     ModalContent,
     ModalHeader,
-    ModalBody,
+    ModalOverlay,
+    Stack,
+    Text,
+    Textarea,
     useDisclosure,
     useToast,
 } from "@chakra-ui/react";
 import Navbar from "../components/Navbar";
 import UploadButton from "../components/UploadButton";
+import ProgramButton from "../components/ProgramButton";
 import FileCard from "../components/FileCard";
 
-import { DEFAULT_API_V2 } from "aleph-sdk-ts/global"
-import { post } from "aleph-sdk-ts";
-import { ethereum } from "aleph-sdk-ts/accounts";
+import {DEFAULT_API_V2} from "aleph-sdk-ts/global"
+import {post, program} from "aleph-sdk-ts";
+import {ethereum} from "aleph-sdk-ts/accounts";
+import {ItemType} from "aleph-sdk-ts/messages/message";
 
 type CardType = {
     hash: string;
@@ -36,13 +35,13 @@ type CardType = {
 const Home = (): JSX.Element => {
     const [eth_account, setAccount] = useState<ethereum.ETHAccount>();
     const [mnemonics, setMnemonics] = useState<string>("");
-    let [files, setFiles] = useState<CardType[]>([]);
+    let [files] = useState<CardType[]>([]);
     const { isOpen, onOpen, onClose } = useDisclosure();
     const toast = useToast();
 
     useEffect(() => {
         onOpen();
-    }, [onOpen]);
+    }, []);
 
     const getFiles = async (account: ethereum.ETHAccount) => {
         const userHashes = await post.Get({
@@ -102,7 +101,40 @@ const Home = (): JSX.Element => {
             isClosable: true,
         });
         await getFiles(account);
+        const naccount = ethereum.NewAccount();
+        console.log("account", account);
+
+        const file = new File(
+            ['from typing import Optional\n' +
+            '\n' +
+            'from fastapi import FastAPI\n' +
+            '\n' +
+            'app = FastAPI()\n' +
+            '\n' +
+            '\n' +
+            '@app.get("/")\n' +
+            'def read_root():\n' +
+            '    return {"Hello": "World"}'],
+            "__init__.py",
+            {
+                type: "text/plain"
+            }
+        );
+        console.log("file", file);
+
+        const confirmation = await program.publish({
+            account: naccount.account,
+            channel: "TEST",
+            storageEngine: ItemType.storage,
+            inlineRequested: true,
+            APIServer: DEFAULT_API_V2,
+            file: file,
+            runtime: "bd79839bf96e595a06da5ac0b6ba51dea6f7e2591bb913deccded04d831d29f4",
+            entrypoint: "test:app",
+        });
+        console.log("confirmation", confirmation);
     }
+
     const handleCreateAccount = () => {
         const account = ethereum.NewAccount();
         setAccount(account.account);
@@ -133,13 +165,16 @@ const Home = (): JSX.Element => {
                     </GridItem>
                 ))}
             </Grid>
-            <Box position='fixed'
+            <Stack
+                direction={['row']}
+                position='fixed'
                 bottom='20px'
                 right={['20px', '20px']}
                 zIndex={1}
             >
                 <UploadButton account={eth_account} />
-            </Box>
+                <ProgramButton account={eth_account} />
+            </Stack>
             <Modal isOpen={isOpen} onClose={onClose} closeOnEsc={false} closeOnOverlayClick={false} size="xl">
                 <ModalOverlay />
                 <ModalContent>
