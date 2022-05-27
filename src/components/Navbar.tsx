@@ -44,7 +44,7 @@ const Navbar = (props: any): JSX.Element => {
                             >
                             <Avatar
                                 size={'sm'}
-                                src={'https://avatars.dicebear.com/api/male/username.svg'}
+                                src={'https://cdn-icons.flaticon.com/png/512/4140/premium/4140048.png?token=exp=1653640440~hmac=411409749d567ec7a22fe2711e221ce8'}
                             />
                             </MenuButton>
                                 <MenuList alignItems={'center'}>
@@ -52,7 +52,7 @@ const Navbar = (props: any): JSX.Element => {
                                     <Center>
                                         <Avatar
                                             size={'2xl'}
-                                            src={'https://avatars.dicebear.com/api/male/username.svg'}
+                                            src={'https://cdn-icons.flaticon.com/png/512/4140/premium/4140048.png?token=exp=1653640440~hmac=411409749d567ec7a22fe2711e221ce8'}
                                         />
                                     </Center>
                                     <br />

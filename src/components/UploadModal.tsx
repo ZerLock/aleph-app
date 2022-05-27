@@ -14,7 +14,7 @@ import {
 } from '@chakra-ui/react';
 
 import { DEFAULT_API_V2 } from "aleph-sdk-ts/global"
-import {post, program, store} from "aleph-sdk-ts";
+import {post, store} from "aleph-sdk-ts";
 import { ethereum } from "aleph-sdk-ts/accounts";
 import { ItemType } from "aleph-sdk-ts/messages/message";
 
@@ -47,6 +47,7 @@ const UploadModal = ({ isOpen, onClose, account }: UploadModalType): JSX.Element
                 content: {
                     headers: "Hashes My App",
                     hashes: confirmation.content.item_hash,
+                    fileType: "file",
                     name: selectedFile.name,
                 }
             });
@@ -91,9 +92,9 @@ const UploadModal = ({ isOpen, onClose, account }: UploadModalType): JSX.Element
                     <ModalBody>
                         <Input
                             type="file"
-                            border="0px"
+                            paddingTop="4px"
                             _focus={{ outline: 'none' }}
-                            onChange={(e) => {
+                            onChange={(e: any) => {
                                 if (e.target.files !== null)
                                     setSelectedFile(e.target.files[0])
                             }}

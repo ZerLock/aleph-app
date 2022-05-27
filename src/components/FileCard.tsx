@@ -28,13 +28,20 @@ const FileCard = ({ hash, name }: CardType): JSX.Element => {
             let new_file = new File([arrBuff], name, { type: "text/plain" });
             setFile(new_file);
         })();
-    }, []);
+    }, [hash, name]);
 
     return (
         <>
-            <Stack direction={['column']} bg="blue.300" padding="5px" minW="20%" borderRadius="20px">
+            <Stack
+                direction={['column']}
+                padding="5px"
+                minW="20%"
+                borderRadius="20px"
+                border="2px solid"
+                borderColor="teal.600"
+            >
                 <Center>
-                    <Text>{name}</Text>
+                    <Text fontSize="xl">{name}</Text>
                 </Center>
                 <Center>
                     <Button colorScheme="teal" variant="solid" onClick={() => {if (file) fileDownload(file, file.name)}}>Download</Button>

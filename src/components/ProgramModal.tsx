@@ -14,7 +14,7 @@ import {
 } from '@chakra-ui/react';
 
 import { DEFAULT_API_V2 } from "aleph-sdk-ts/global"
-import { program } from "aleph-sdk-ts";
+import { program, post } from "aleph-sdk-ts";
 import { ethereum } from "aleph-sdk-ts/accounts";
 import { ItemType } from "aleph-sdk-ts/messages/message";
 
@@ -26,6 +26,7 @@ type UploadModalType = {
 
 const ProgramModal = ({ isOpen, onClose, account }: UploadModalType): JSX.Element => {
     const [selectedFile, setSelectedFile] = useState<File>(new File([], ""));
+    const [programName, setProgramName] = useState<string>("");
     const toast = useToast();
 
     const handleSubmit = async () => {
@@ -38,8 +39,31 @@ const ProgramModal = ({ isOpen, onClose, account }: UploadModalType): JSX.Elemen
             file: selectedFile,
             entrypoint: "main:app",
         });
-        console.log("confirmation: https://aleph.sh/vm/" + confirmation.item_hash);
         if (confirmation) {
+            const conf = await post.Publish({
+                APIServer: DEFAULT_API_V2,
+                channel: "TEST",
+                inlineRequested: true,
+                storageEngine: ItemType.ipfs,
+                account: account,
+                postType: "",
+                content: {
+                    headers: "Hashes My App",
+                    hashes: confirmation.item_hash,
+                    fileType: "program",
+                    name: programName,
+                }
+            });
+            if (!conf) {
+                toast({
+                    title: "Upload failed",
+                    description: "Your file has not been uploaded",
+                    status: "error",
+                    duration: 3000,
+                    isClosable: true,
+                });
+                return;
+            }
             toast({
                 title: "Program uploaded",
                 description: "Program uploaded to Aleph",
@@ -54,7 +78,6 @@ const ProgramModal = ({ isOpen, onClose, account }: UploadModalType): JSX.Elemen
                 duration: 3000,
                 isClosable: true,
             });
-            console.log("Program uploaded!\nVisit https://aleph.sh/vm/" + confirmation.item_hash, "to see it in the VM");
         } else {
             toast({
                 title: "Upload failed",
@@ -80,16 +103,19 @@ const ProgramModal = ({ isOpen, onClose, account }: UploadModalType): JSX.Elemen
                         <Text fontSize="lg">⚠️ Only .zip files and python servers</Text>
                     </ModalBody>
                     <ModalBody>
-                        <Input
-                            type="file"
-                            accept=".zip"
-                            border="0px"
-                            _focus={{ outline: 'none' }}
-                            onChange={(e) => {
-                                if (e.target.files !== null)
-                                    setSelectedFile(e.target.files[0])
-                            }}
-                        />
+                        <Stack direction={['column']} spacing="5">
+                            <Input placeholder="program name" value={programName} onChange={(e: any) => setProgramName(e.target.value)} />
+                            <Input
+                                type="file"
+                                accept=".zip"
+                                paddingTop="4px"
+                                _focus={{ outline: 'none' }}
+                                onChange={(e: any) => {
+                                    if (e.target.files !== null)
+                                        setSelectedFile(e.target.files[0])
+                                }}
+                            />
+                        </Stack>
                     </ModalBody>
 
                     <ModalFooter>
@@ -104,7 +130,7 @@ const ProgramModal = ({ isOpen, onClose, account }: UploadModalType): JSX.Elemen
                             <Button
                                 colorScheme="teal"
                                 variant="solid"
-                                disabled={!(selectedFile !== undefined)}
+                                disabled={!(selectedFile !== undefined) && !(programName !== "")}
                                 onClick={async () => await handleSubmit()}
                             >
                                 Upload

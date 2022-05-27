@@ -1,6 +1,5 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useState, useReducer} from 'react';
 import {
-    Box,
     Button,
     Center,
     Grid,
@@ -21,15 +20,16 @@ import Navbar from "../components/Navbar";
 import UploadButton from "../components/UploadButton";
 import ProgramButton from "../components/ProgramButton";
 import FileCard from "../components/FileCard";
+import ProgramCard from "../components/ProgramCard";
 
-import {DEFAULT_API_V2} from "aleph-sdk-ts/global"
-import {post, program} from "aleph-sdk-ts";
-import {ethereum} from "aleph-sdk-ts/accounts";
-import {ItemType} from "aleph-sdk-ts/messages/message";
+import { DEFAULT_API_V2 } from "aleph-sdk-ts/global"
+import { post } from "aleph-sdk-ts";
+import { ethereum } from "aleph-sdk-ts/accounts";
 
 type CardType = {
     hash: string;
     name: string;
+    fileTypes: string;
 };
 
 const Home = (): JSX.Element => {
@@ -37,11 +37,16 @@ const Home = (): JSX.Element => {
     const [mnemonics, setMnemonics] = useState<string>("");
     let [files] = useState<CardType[]>([]);
     const { isOpen, onOpen, onClose } = useDisclosure();
+    const [, forceUpdate] = useReducer((x: any) => x + 1, 0);
     const toast = useToast();
 
     useEffect(() => {
         onOpen();
-    }, []);
+    }, [onOpen]);
+
+    const refreshPage = async () => {
+        forceUpdate();
+    }
 
     const getFiles = async (account: ethereum.ETHAccount) => {
         const userHashes = await post.Get({
@@ -56,13 +61,12 @@ const Home = (): JSX.Element => {
         });
         let posts: string[] = [];
         let names: string[] = [];
-        // @ts-ignore
-        userHashes.posts.forEach(hash => posts.push(hash.content.hashes.toString()));
-        // @ts-ignore
-        userHashes.posts.forEach(hash => names.push(hash.content.name.toString()));
+        let filesType: string[] = [];
+        userHashes.posts.forEach((hash: any) => posts.push(hash.content.hashes.toString()));
+        userHashes.posts.forEach((hash: any) => names.push(hash.content.name.toString()));
+        userHashes.posts.forEach((hash: any) => filesType.push(hash.content.fileType));
         for (let i = 0; i < posts.length; i++) {
-            let file: CardType = {hash: posts[i], name: names[i]} as CardType;
-            console.log(file);
+            let file: CardType = {hash: posts[i], name: names[i], fileTypes: filesType[i]} as CardType;
             files.push(file);
         }
     }
@@ -101,38 +105,7 @@ const Home = (): JSX.Element => {
             isClosable: true,
         });
         await getFiles(account);
-        const naccount = ethereum.NewAccount();
-        console.log("account", account);
-
-        const file = new File(
-            ['from typing import Optional\n' +
-            '\n' +
-            'from fastapi import FastAPI\n' +
-            '\n' +
-            'app = FastAPI()\n' +
-            '\n' +
-            '\n' +
-            '@app.get("/")\n' +
-            'def read_root():\n' +
-            '    return {"Hello": "World"}'],
-            "__init__.py",
-            {
-                type: "text/plain"
-            }
-        );
-        console.log("file", file);
-
-        const confirmation = await program.publish({
-            account: naccount.account,
-            channel: "TEST",
-            storageEngine: ItemType.storage,
-            inlineRequested: true,
-            APIServer: DEFAULT_API_V2,
-            file: file,
-            runtime: "bd79839bf96e595a06da5ac0b6ba51dea6f7e2591bb913deccded04d831d29f4",
-            entrypoint: "test:app",
-        });
-        console.log("confirmation", confirmation);
+        refreshPage();
     }
 
     const handleCreateAccount = () => {
@@ -160,8 +133,12 @@ const Home = (): JSX.Element => {
             <Navbar account={eth_account} />
             <Grid templateColumns='repeat(5, 1fr)' gap={6} margin="20px">
                 {files.map(file => (
-                    <GridItem>
-                        <FileCard name={file.name} hash={file.hash} />
+                    <GridItem key={file.name}>
+                        {file.fileTypes === "file" ?
+                            <FileCard hash={file.hash} name={file.name} />
+                        :
+                            <ProgramCard hash={file.hash} name={file.name} />
+                        }
                     </GridItem>
                 ))}
             </Grid>
@@ -190,7 +167,7 @@ const Home = (): JSX.Element => {
                                     w="40vh"
                                     resize="none"
                                     value={mnemonics}
-                                    onChange={(e) => setMnemonics(e.target.value)}
+                                    onChange={(e: any) => setMnemonics(e.target.value)}
                                 />
                                 <Button
                                     colorScheme="teal"
